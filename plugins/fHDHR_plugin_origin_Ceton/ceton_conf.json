@@ -4,6 +4,17 @@
                     "value": "none",
                     "config_file": true,
                     "config_web": true
+                },
+          "streaming_method":{
+                    "value": "ffmpeg",
+                    "config_file": true,
+                    "config_web": true
+                },
+          "tuners":{
+                    "value": "4",
+                    "config_file": true,
+                    "config_web": true
                 }
+ 
   }
 }
