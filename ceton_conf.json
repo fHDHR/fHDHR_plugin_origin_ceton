@@ -1,0 +1,9 @@
+{
+  "ceton":{
+          "ceton_ip":{
+                    "value": "none",
+                    "config_file": true,
+                    "config_web": true
+                }
+  }
+}
