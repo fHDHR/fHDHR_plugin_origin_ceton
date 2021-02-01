@@ -1,4 +1,4 @@
-<p align="center">fHDHR_Locast    <img src="docs/images/logo.ico" alt="Logo"/></p>
+<p align="center">fHDHR_Ceton    <img src="docs/images/logo.ico" alt="Logo"/></p>
 
 
 Welcome to the world of streaming content as a DVR device! We use some fancy python here to achieve a system of:
@@ -13,7 +13,8 @@ fHDHR is labeled as beta until we reach v1.0.0
 
 Join us in `#fHDHR <irc://irc.freenode.net/#fHDHR>`_ on Freenode.
 
-# !!NOTICE!!
+Support for the stand-alone eth4 and eth6 versions of Ceton devices is confirmed.
+The PCI devices might work, but due to a lack of hardware, have not been tested.
 
-To reduce code duplication between variants, I am moving to a plugin system.
-The normal variant repos will stay active during the transition.
+Unlike the other origin plugins, this one requires the fHDHR_plugin_stream_ffmpeg.
+
