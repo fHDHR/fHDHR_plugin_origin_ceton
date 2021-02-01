@@ -11,7 +11,10 @@ class Plugin_OBJ():
     def __init__(self, plugin_utils):
         self.plugin_utils = plugin_utils
 
-        count = int(self.plugin_utils.config.dict["fhdhr"]["tuner_count"])
+        self.tuners = self.plugin_utils.config.dict["ceton"]["tuners"]
+        self.stream_method = self.plugin_utils.config.dict["ceton"]["stream_method"]
+
+        count = int(self.plugin_utils.config.dict["ceton"]["tuners"])
         for i in range(count):
             self.startstop_ceton_tuner(i, 0)
 
@@ -41,7 +44,7 @@ class Plugin_OBJ():
 
     def get_ceton_tuner_status(self, chandict):
         found = 0
-        count = int(self.plugin_utils.config.dict["fhdhr"]["tuner_count"])
+        count = int(self.plugin_utils.config.dict["ceton"]["tuners"])
         for instance in range(count):
 
             result = self.get_ceton_getvar(instance, "TransportState")
