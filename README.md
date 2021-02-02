@@ -26,6 +26,8 @@ Join us in `#fHDHR <irc://irc.freenode.net/#fHDHR>`_ on Freenode.
 ````
 [ceton]
 # ceton_ip = 
+# tuners =
+# streaming_method =
 ````
 =======
 Support for the stand-alone eth4 and eth6 versions of Ceton devices is confirmed.
