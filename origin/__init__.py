@@ -91,7 +91,7 @@ class Plugin_OBJ():
                           '/channel_request.cgi'
                           )
         tuneChannel_data = {"instance_id": instance,
-                            "channel": chandict['number']}
+                            "channel": chandict['origin_number']}
 
         try:
             tuneChannelUrlReq = self.plugin_utils.web.session.post(tuneChannelUrl, tuneChannel_data)
@@ -184,7 +184,7 @@ class Plugin_OBJ():
         self.get_ceton_getvar(instance, "CopyProtectionStatus")
 
         if tuned:
-            self.plugin_utils.logger.info('Initiate streaming channel %s from Ceton tuner#: %s ' % (chandict['number'], instance))
+            self.plugin_utils.logger.info('Initiate streaming channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
             streamurl = "udp://127.0.0.1:%s" % port
         else:
             streamurl = None
