@@ -1,6 +1,5 @@
 import base64
 import re
-import time
 import xmltodict
 
 from random import randint
