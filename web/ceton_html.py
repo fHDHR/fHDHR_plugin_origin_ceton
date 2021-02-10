@@ -15,7 +15,7 @@ class Ceton_HTML():
 
         self.origin = plugin_utils.origin
 
-        self.template_file = pathlib.Path(plugin_utils.config.dict["plugin_web_paths"][plugin_utils.namespace]["path"]).joinpath('ceton.html')
+        self.template_file = pathlib.Path(plugin_utils.path).joinpath('ceton.html')
         self.template = StringIO()
         self.template.write(open(self.template_file).read())
 
