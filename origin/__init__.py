@@ -1,6 +1,5 @@
 import base64
 import re
-import time
 import xmltodict
 
 from random import randint
@@ -11,7 +10,10 @@ class Plugin_OBJ():
     def __init__(self, plugin_utils):
         self.plugin_utils = plugin_utils
 
-        count = int(self.plugin_utils.config.dict["fhdhr"]["tuner_count"])
+        self.tuners = self.plugin_utils.config.dict["ceton"]["tuners"]
+        self.stream_method = self.plugin_utils.config.dict["ceton"]["stream_method"]
+
+        count = int(self.plugin_utils.config.dict["ceton"]["tuners"])
         for i in range(count):
             self.startstop_ceton_tuner(i, 0)
 
@@ -41,7 +43,7 @@ class Plugin_OBJ():
 
     def get_ceton_tuner_status(self, chandict):
         found = 0
-        count = int(self.plugin_utils.config.dict["fhdhr"]["tuner_count"])
+        count = int(self.plugin_utils.config.dict["ceton"]["tuners"])
         for instance in range(count):
 
             result = self.get_ceton_getvar(instance, "TransportState")
@@ -88,7 +90,7 @@ class Plugin_OBJ():
                           '/channel_request.cgi'
                           )
         tuneChannel_data = {"instance_id": instance,
-                            "channel": chandict['number']}
+                            "channel": chandict['origin_number']}
 
         try:
             tuneChannelUrlReq = self.plugin_utils.web.session.post(tuneChannelUrl, tuneChannel_data)
@@ -181,7 +183,7 @@ class Plugin_OBJ():
         self.get_ceton_getvar(instance, "CopyProtectionStatus")
 
         if tuned:
-            self.plugin_utils.logger.info('Initiate streaming channel %s from Ceton tuner#: %s ' % (chandict['number'], instance))
+            self.plugin_utils.logger.info('Initiate streaming channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
             streamurl = "udp://127.0.0.1:%s" % port
         else:
             streamurl = None
