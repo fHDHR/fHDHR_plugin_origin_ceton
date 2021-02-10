@@ -10,12 +10,21 @@ class Plugin_OBJ():
     def __init__(self, plugin_utils):
         self.plugin_utils = plugin_utils
 
-        self.tuners = self.plugin_utils.config.dict["ceton"]["tuners"]
-        self.stream_method = self.plugin_utils.config.dict["ceton"]["stream_method"]
-
-        count = int(self.plugin_utils.config.dict["ceton"]["tuners"])
+        count = int(self.tuners)
         for i in range(count):
             self.startstop_ceton_tuner(i, 0)
+
+    @property
+    def tuners(self):
+        return self.plugin_utils.config.dict["ceton"]["tuners"]
+
+    @property
+    def stream_method(self):
+        return self.plugin_utils.config.dict["ceton"]["stream_method"]
+
+    @property
+    def ceton_ip(self):
+        return self.plugin_utils.config.dict["ceton"]["ceton_ip"]
 
     def get_ceton_getvar(self, instance, query):
         query_type = {
@@ -28,7 +37,7 @@ class Plugin_OBJ():
                       "TransportState": "&s=av&v=TransportState"
                      }
 
-        getVarUrl = ('http://%s/get_var?i=%s%s' % (self.plugin_utils.config.dict["ceton"]["ceton_ip"], instance, query_type[query]))
+        getVarUrl = ('http://%s/get_var?i=%s%s' % (self.ceton_ip, instance, query_type[query]))
 
         try:
             getVarUrlReq = self.plugin_utils.web.session.get(getVarUrl)
@@ -43,7 +52,7 @@ class Plugin_OBJ():
 
     def get_ceton_tuner_status(self, chandict):
         found = 0
-        count = int(self.plugin_utils.config.dict["ceton"]["tuners"])
+        count = int(self.tuners)
         for instance in range(count):
 
             result = self.get_ceton_getvar(instance, "TransportState")
@@ -63,9 +72,7 @@ class Plugin_OBJ():
             port = randint(41001, 49999)
             self.plugin_utils.logger.info('Ceton tuner %s to be started' % str(instance))
 
-        StartStopUrl = ('http://' + self.plugin_utils.config.dict["ceton"]["ceton_ip"] +
-                        '/stream_request.cgi'
-                        )
+        StartStopUrl = 'http://%s/stream_request.cgi' % self.ceton_ip
 
         StartStop_data = {"instance_id": instance,
                           "dest_ip": self.plugin_utils.config.dict["fhdhr"]["address"],
@@ -86,9 +93,7 @@ class Plugin_OBJ():
         return port
 
     def set_ceton_tuner(self, chandict, instance):
-        tuneChannelUrl = ('http://' + self.plugin_utils.config.dict["ceton"]["ceton_ip"] +
-                          '/channel_request.cgi'
-                          )
+        tuneChannelUrl = 'http://%s/channel_request.cgi' % self.ceton_ip
         tuneChannel_data = {"instance_id": instance,
                             "channel": chandict['origin_number']}
 
@@ -105,8 +110,7 @@ class Plugin_OBJ():
         cleaned_channels = []
         url_headers = {'accept': 'application/xml;q=0.9, */*;q=0.8'}
 
-        count_url = ('http://' + self.plugin_utils.config.dict["ceton"]["ceton_ip"] +
-                     '/view_channel_map.cgi?page=1')
+        count_url = 'http://%s/view_channel_map.cgi?page=1' % self.ceton_ip
 
         try:
             countReq = self.plugin_utils.web.session.get(count_url, headers=url_headers)
@@ -120,7 +124,7 @@ class Plugin_OBJ():
         page = 0
 
         while True:
-            stations_url = "http://%s/view_channel_map.cgi?page=%s&xml=1" % (self.plugin_utils.config.dict["ceton"]["ceton_ip"], page)
+            stations_url = "http://%s/view_channel_map.cgi?page=%s&xml=1" % (self.ceton_ip, page)
 
             try:
                 stationsReq = self.plugin_utils.web.session.get(stations_url, headers=url_headers)
