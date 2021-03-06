@@ -26,14 +26,14 @@ class Ceton_HTML():
 
         if self.origin.setup_success:
             origin_status_dict = {"Setup": "Success"}
+            origin_status_dict["Temp"] = self.plugin_utils.origin.get_ceton_getvar(0, "Temperature")
+
+            for i in range(int(self.fhdhr.config.dict["ceton"]["tuners"])):
+                origin_status_dict["Tuner"+str(i)] = {}
+                origin_status_dict["Tuner"+str(i)]['State'] = self.plugin_utils.origin.get_ceton_getvar(i, "TransportState")
+                origin_status_dict["Tuner"+str(i)]['Signal'] = self.plugin_utils.origin.get_ceton_getvar(i, "Signal_Level")
+                origin_status_dict["Tuner"+str(i)]['SNR'] = self.plugin_utils.origin.get_ceton_getvar(i, "Signal_SNR")
         else:
             origin_status_dict = {"Setup": "Failed"}
 
-        origin_status_dict["Temp"] = self.plugin_utils.origin.get_ceton_getvar(0, "Temperature")
-
-        for i in range(int(self.fhdhr.config.dict["ceton"]["tuners"])):
-            origin_status_dict["Tuner"+str(i)] = {}
-            origin_status_dict["Tuner"+str(i)]['State'] = self.plugin_utils.origin.get_ceton_getvar(i, "TransportState")
-            origin_status_dict["Tuner"+str(i)]['Signal'] = self.plugin_utils.origin.get_ceton_getvar(i, "Signal_Level")
-            origin_status_dict["Tuner"+str(i)]['SNR'] = self.plugin_utils.origin.get_ceton_getvar(i, "Signal_SNR")
         return render_template_string(self.template.getvalue(), request=request, fhdhr=self.fhdhr, origin_status_dict=origin_status_dict, list=list)

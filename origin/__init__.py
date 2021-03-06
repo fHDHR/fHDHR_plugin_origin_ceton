@@ -3,12 +3,16 @@ import re
 import xmltodict
 
 from random import randint
+import fHDHR.exceptions
 
 
 class Plugin_OBJ():
 
     def __init__(self, plugin_utils):
         self.plugin_utils = plugin_utils
+
+        if not self.ceton_ip: 
+            raise fHDHR.exceptions.OriginSetupError("Ceton IP not set.")
 
         count = int(self.tuners)
         for i in range(count):
