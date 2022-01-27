@@ -14,6 +14,13 @@ class Plugin_OBJ():
         if not self.ceton_ip: 
             raise fHDHR.exceptions.OriginSetupError("Ceton IP not set.")
 
+        hwtype = self.get_ceton_getvar(0, "HostConnection")
+        self.plugin_utils.logger.info('Ceton hardware type: %s' % hwtype)
+        if 'pci' in hwtype:
+            self.ceton_pcie = True
+        else:
+            self.ceton_pcie = False
+
         count = int(self.tuners)
         for i in range(count):
             self.startstop_ceton_tuner(i, 0)
@@ -38,8 +45,9 @@ class Plugin_OBJ():
                       "Temperature": "&s=diag&v=Temperature",
                       "Signal_Level": "&s=diag&v=Signal_Level",
                       "Signal_SNR": "&s=diag&v=Signal_SNR",
-                      "TransportState": "&s=av&v=TransportState"
-                     }
+                      "TransportState": "&s=av&v=TransportState",
+                      "HostConnection": "&s=diag&v=Host_Connection"
+        }
 
         getVarUrl = ('http://%s/get_var?i=%s%s' % (self.ceton_ip, instance, query_type[query]))
 
@@ -191,8 +199,12 @@ class Plugin_OBJ():
         self.get_ceton_getvar(instance, "CopyProtectionStatus")
 
         if tuned:
-            self.plugin_utils.logger.info('Initiate streaming channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
-            streamurl = "udp://127.0.0.1:%s" % port
+            if not self.ceton_pcie:
+                self.plugin_utils.logger.info('Initiate streaming channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
+                streamurl = "udp://127.0.0.1:%s" % port
+            else:
+                self.plugin_utils.logger.info('Initiate PCIe direct streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
+                streamurl = "/dev/ceton/ctn91xx_mpeg0_%s" % instance
         else:
             streamurl = None
 
