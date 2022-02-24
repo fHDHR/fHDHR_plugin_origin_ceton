@@ -5,6 +5,11 @@
                     "config_file": true,
                     "config_web": true
                 },
+          "pcie_ip":{
+                    "value": "none",
+                    "config_file": true,
+                    "config_web": true
+                },
           "tuners":{
                     "value": "4",
                     "config_file": true,
