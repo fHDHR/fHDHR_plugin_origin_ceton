@@ -26,16 +26,12 @@ class Plugin_OBJ():
             self.startstop_ceton_tuner(i, 0)
 
     @property
-    def tuners(self):
-        return self.plugin_utils.config.dict["ceton"]["tuners"]
-
-    @property
-    def stream_method(self):
-        return self.plugin_utils.config.dict["ceton"]["stream_method"]
+    def config_dict(self):
+        return self.plugin_utils.config.dict["ceton"]
 
     @property
     def ceton_ip(self):
-        return self.plugin_utils.config.dict["ceton"]["ceton_ip"]
+        return self.config_dict["ceton_ip"]
 
     def get_ceton_getvar(self, instance, query):
         query_type = {
