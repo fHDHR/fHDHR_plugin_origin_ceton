@@ -30,6 +30,10 @@ class Plugin_OBJ():
         return self.plugin_utils.config.dict["ceton"]
 
     @property
+    def tuners(self):
+        return self.config_dict["tuners"]
+
+    @property
     def ceton_ip(self):
         return self.config_dict["ceton_ip"]
 
