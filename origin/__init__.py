@@ -28,16 +28,16 @@ class Plugin_OBJ():
             self.startstop_ceton_tuner(i, 0)
 
     @property
-    def tuners(self):
-        return self.plugin_utils.config.dict["ceton"]["tuners"]
+    def config_dict(self):
+        return self.plugin_utils.config.dict["ceton"]
 
     @property
-    def stream_method(self):
-        return self.plugin_utils.config.dict["ceton"]["stream_method"]
+    def tuners(self):
+        return self.config_dict["tuners"]
 
     @property
     def ceton_ip(self):
-        return self.plugin_utils.config.dict["ceton"]["ceton_ip"]
+        return self.config_dict["ceton_ip"]
 
     @property
     def pcie_ip(self):
