@@ -23,6 +23,10 @@ class Plugin_OBJ():
         return self.config_dict["tuners"]
 
     @property
+    def stream_method(self):
+        return self.config_dict["stream_method"]
+
+    @property
     def ceton_ip(self):
         return self.config_dict["ceton_ip"]
 
