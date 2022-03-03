@@ -5,6 +5,11 @@
                     "config_file": true,
                     "config_web": true
                 },
+          "pcie_ip":{
+                    "value": "none",
+                    "config_file": true,
+                    "config_web": true
+                },
           "tuners":{
                     "value": "4",
                     "config_file": true,
@@ -14,6 +19,13 @@
                     "value": "ffmpeg",
                     "config_file": true,
                     "config_web": true
+                },
+          "pages_to_refresh":{
+                    "value": "page_ceton_html",
+                    "config_file": false,
+                    "config_web": false,
+                    "valid_options": "list",
+                    "description": "A Comma Seperated list of pages to enable automatic refresh."
                 }
   }
 }
