@@ -6,34 +6,61 @@
 
       <table class="center" style="width:50%">
         <tr>
-        <tr>
-          <td>Setup</td>
-          <td>{{ origin_status_dict['Setup'] }}</td>
+          <td colspan="2">Setup</td>
+          <td colspan="100">{{ origin_status_dict['Setup'] }}</td>
         </tr>
         <tr>
-          <td>Temperature</td>
-          <td>{{ origin_status_dict['Temp'] }}</td>
+          <td colspan="2">Temperature</td>
+          <td colspan="100">{{ origin_status_dict['Temp'] }}</td>
         </tr>
-
-      <table class="center" style="width:50%">
-	  <tr>
-            <td>Tuner</td>
-	    <td>State</td>
-	    <td>Signal</td>
-	    <td>SNR</td>
-	    <td>Action</td>
+        <tr>
+          <td colspan="2">Hardware Type</td>
+          <td colspan="100">{{ origin_status_dict['HWType'] }}</td>
+        </tr>
+        <tr>
+          <td colspan="2">Hardware Revision</td>
+          <td colspan="100">{{ origin_status_dict['HostHardware'] }}</td>
+        </tr>
+        <tr>
+          <td colspan="2">Firmware Version</td>
+          <td colspan="100">{{ origin_status_dict['HostFirmware'] }}</td>
+        </tr>
+        <tr>
+          <td colspan="2">Serial Number</td>
+          <td colspan="100">{{ origin_status_dict['HostSerial'] }}</td>
+        </tr>
+        <tr>
+          <td rowspan="2" align="center">Tuner</td>
+          <td colspan="4" align="center">Signal State</td>
+          <td colspan="4" align="center">Signal Quality</td>
+          <td rowspan="2" align="center">Action</td>
+        </tr>
+	  <tr align="center">
+          <td>Transport</td>
+          <td>HW State</td>
+          <td>Signal Lock</td>
+          <td>Digital Lock</td>
+          <td>Signal</td>
+          <td>SNR</td>
+          <td>BER</td>
+          <td>Modulation</td>
+      </tr>
       {% for key in list(origin_status_dict.keys()) 
       if "Tuner" in key: %}
         <tr>
-          <td>{{ key[5:]  }}</td>
-          <td>{{ origin_status_dict[key]['State'] }}</td>
-          <td>{{ origin_status_dict[key]['Signal'] }}</td>
-          <td>{{ origin_status_dict[key]['SNR'] }}</td>
-	  {% if origin_status_dict[key]['State'] == "STOPPED" %}
-	     <td></td>
-	  {% endif %}
-	  {% if origin_status_dict[key]['State'] == "PLAYING" %}
+          <td align="center">{{ key[5:]  }}</td>
+          <td align="center">{{ origin_status_dict[key]['Transport'] }}</td>
+          <td align="center">{{ origin_status_dict[key]['HWState'] }}</td>
+          <td align="center">{{ origin_status_dict[key]['SignalLock'] }}</td>
+          <td align="center">{{ origin_status_dict[key]['PCRLock'] }}</td>
+          <td align="right">{{ origin_status_dict[key]['Signal'] }}</td>
+          <td align="right">{{ origin_status_dict[key]['SNR'] }}</td>
+          <td align="right">{{ origin_status_dict[key]['BER'] }}</td>
+          <td align="center">{{ origin_status_dict[key]['Modulation'] }}</td>
+	  {% if (origin_status_dict[key]['Transport'] == "PLAYING") or (origin_status_dict[key]['HWState'] == "In Use") %}
 	     <td><button onclick="location.href='/api/ceton?method=close&tuner={{ key[5:] }}&redirect=%2Fceton'">Close</a></button></td>
+      {% else %}
+	     <td></td>
 	  {% endif %}
         </tr>
       {% endfor %}

@@ -1,6 +1,7 @@
 import base64
 import re
 import xmltodict
+import subprocess
 
 from random import randint
 import fHDHR.exceptions
@@ -55,8 +56,16 @@ class Plugin_OBJ():
                       "Temperature": "&s=diag&v=Temperature",
                       "Signal_Level": "&s=diag&v=Signal_Level",
                       "Signal_SNR": "&s=diag&v=Signal_SNR",
+                      "Signal_BER": "&s=tuner&v=BER",
+                      "Signal_Modulation": "&s=tuner&v=Modulation",
                       "TransportState": "&s=av&v=TransportState",
-                      "HostConnection": "&s=diag&v=Host_Connection"
+                      "HostConnection": "&s=diag&v=Host_Connection",
+                      "HostSerial": "&s=diag&v=Host_Serial_Number",
+                      "HostFirmware": "&s=diag&v=Host_Firmware",
+                      "HostHardware": "&s=diag&v=Hardware_Revision",
+                      "SignalCarrierLock": "&s=diag&v=Signal_Carrier_Lock",
+                      "SignalPCRLock": "&s=diag&v=Signal_PCR_Lock",
+                      "OOBStatus": "&s=diag&v=OOB_Status",
         }
 
         getVarUrl = ('http://%s/get_var?i=%s%s' % (self.ceton_ip, instance, query_type[query]))
@@ -72,14 +81,31 @@ class Plugin_OBJ():
 
         return result.group(1)
 
+    def devinuse(self, filename):
+        if self.ceton_pcie:
+            try:
+                subprocess.check_output(['fuser', filename], stderr=subprocess.DEVNULL)
+                # man: if access has been found, fuser returns zero
+                # => Return True, device is in use
+                return True
+            except subprocess.CalledProcessError:
+                # man: fuser returns a non-zero return code if none of the specified files is accessed
+                # => Return False, device is not in use
+                return False
+        else:
+            # Not PCIe card, so don't check device
+            return False
+
     def get_ceton_tuner_status(self, chandict):
         found = 0
         count = int(self.tuners)
         for instance in range(count):
 
-            result = self.get_ceton_getvar(instance, "TransportState")
-
-            if result == "STOPPED":
+            transport = self.get_ceton_getvar(instance, "TransportState")
+            hwinuse = self.devinuse("/dev/ceton/ctn91xx_mpeg0_%s" % instance)
+            # Check to see if transport on (rtp/udp streaming), or direct HW device access (pcie)
+            # This also handles the case of another client accessing the tuner!
+            if (transport == "STOPPED") and (not hwinuse):
                 self.plugin_utils.logger.info('Selected Ceton tuner#: %s' % instance)
                 found = 1
                 break
@@ -101,7 +127,7 @@ class Plugin_OBJ():
             dest_port =  port
         else:
             dest_ip = self.pcie_ip
-            dest_port = 8000 + instance
+            dest_port = 8000 + int(instance)
         StartStop_data = {"instance_id": instance,
                           "dest_ip": dest_ip,
                           "dest_port": dest_port,
@@ -111,12 +137,14 @@ class Plugin_OBJ():
         #                    'Content-Type': 'application/json',
         #                    'User-Agent': "curl/7.64.1"}
 
-        try:
-            StartStopUrlReq = self.plugin_utils.web.session.post(StartStopUrl, StartStop_data)
-            StartStopUrlReq.raise_for_status()
-        except self.plugin_utils.web.exceptions.HTTPError as err:
-            self.plugin_utils.logger.error('Error while setting station stream: %s' % err)
-            return None
+        # StartStop ... OK to Stop tuner for direct (and safe), but do not Start => or blocks direct!
+        if not (startstop and self.stream_method == 'direct'):
+            try:
+                StartStopUrlReq = self.plugin_utils.web.session.post(StartStopUrl, StartStop_data)
+                StartStopUrlReq.raise_for_status()
+            except self.plugin_utils.web.exceptions.HTTPError as err:
+                self.plugin_utils.logger.error('Error while setting station stream: %s' % err)
+                return None
 
         return port
 
@@ -219,8 +247,12 @@ class Plugin_OBJ():
                 self.plugin_utils.logger.info('Initiate streaming channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
                 streamurl = "udp://127.0.0.1:%s" % port
             else:
-                self.plugin_utils.logger.info('Initiate PCIe direct streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
-                streamurl = "udp://%s:800%s" % (self.pcie_ip, instance)
+                if self.stream_method == 'direct':
+                    self.plugin_utils.logger.info('Initiate PCIe direct streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
+                    streamurl = "/dev/ceton/ctn91xx_mpeg0_%s" % instance
+                else:
+                    self.plugin_utils.logger.info('Initiate PCIe rtp (udp) streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
+                    streamurl = "udp://%s:800%s" % (self.pcie_ip, instance)
             self.plugin_utils.logger.info('Ceton tuner %s streamurl set, to: %s' % (instance, streamurl))
         else:
             streamurl = None
