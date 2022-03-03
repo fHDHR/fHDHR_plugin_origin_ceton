@@ -31,13 +31,12 @@
         </tr>
         <tr>
           <td rowspan="2" align="center">Tuner</td>
-          <td colspan="4" align="center">Signal State</td>
+          <td colspan="3" align="center">Signal State</td>
           <td colspan="4" align="center">Signal Quality</td>
           <td rowspan="2" align="center">Action</td>
         </tr>
 	  <tr align="center">
-          <td>Transport</td>
-          <td>HW State</td>
+          <td>Streaming</td>
           <td>Signal Lock</td>
           <td>Digital Lock</td>
           <td>Signal</td>
@@ -49,8 +48,13 @@
       if "Tuner" in key: %}
         <tr>
           <td align="center">{{ key[5:]  }}</td>
-          <td align="center">{{ origin_status_dict[key]['Transport'] }}</td>
-          <td align="center">{{ origin_status_dict[key]['HWState'] }}</td>
+	  {% if (origin_status_dict[key]['Transport'] == "PLAYING") %}
+	     <td align="center">RTP</td>
+	  {% elif (origin_status_dict[key]['HWState'] == "In Use") %}
+	     <td align="center">Direct</td>
+      {% else %}
+	     <td align="center">Idle</td>
+	  {% endif %}
           <td align="center">{{ origin_status_dict[key]['SignalLock'] }}</td>
           <td align="center">{{ origin_status_dict[key]['PCRLock'] }}</td>
           <td align="right">{{ origin_status_dict[key]['Signal'] }}</td>

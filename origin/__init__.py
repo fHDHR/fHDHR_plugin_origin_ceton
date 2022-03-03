@@ -251,7 +251,7 @@ class Plugin_OBJ():
                     self.plugin_utils.logger.info('Initiate PCIe direct streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
                     streamurl = "/dev/ceton/ctn91xx_mpeg0_%s" % instance
                 else:
-                    self.plugin_utils.logger.info('Initiate PCIe rtp (udp) streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
+                    self.plugin_utils.logger.info('Initiate rtp (udp) streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
                     streamurl = "udp://%s:800%s" % (self.pcie_ip, instance)
             self.plugin_utils.logger.info('Ceton tuner %s streamurl set, to: %s' % (instance, streamurl))
         else:
