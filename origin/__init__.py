@@ -137,8 +137,8 @@ class Plugin_OBJ():
         #                    'Content-Type': 'application/json',
         #                    'User-Agent': "curl/7.64.1"}
 
-        # StartStop ... OK to Stop tuner for direct (and safe), but do not Start => or blocks direct!
-        if not (startstop and self.stream_method == 'direct'):
+        # StartStop ... OK to Stop tuner for pcie (and safe), but do not Start => or blocks pcie (/dev)!
+        if not (startstop and self.ceton_pcie):
             try:
                 StartStopUrlReq = self.plugin_utils.web.session.post(StartStopUrl, StartStop_data)
                 StartStopUrlReq.raise_for_status()
@@ -247,13 +247,9 @@ class Plugin_OBJ():
                 self.plugin_utils.logger.info('Initiate streaming channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
                 streamurl = "udp://127.0.0.1:%s" % port
             else:
-                if self.stream_method == 'direct':
-                    self.plugin_utils.logger.info('Initiate PCIe direct streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
-                    streamurl = "/dev/ceton/ctn91xx_mpeg0_%s" % instance
-                else:
-                    self.plugin_utils.logger.info('Initiate rtp (udp) streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
-                    streamurl = "udp://%s:800%s" % (self.pcie_ip, instance)
-            self.plugin_utils.logger.info('Ceton tuner %s streamurl set, to: %s' % (instance, streamurl))
+                # PCIe, only use /dev, not rtp => no additional logic needed to handle this then, and can still change stream_method (direct, ffmpeg)
+                self.plugin_utils.logger.info('Initiate PCIe direct streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
+                streamurl = "/dev/ceton/ctn91xx_mpeg0_%s" % instance
         else:
             streamurl = None
 
