@@ -31,12 +31,13 @@
         </tr>
         <tr>
           <td rowspan="2" align="center">Tuner</td>
-          <td colspan="3" align="center">Signal State</td>
+          <td colspan="4" align="center">Signal State</td>
           <td colspan="4" align="center">Signal Quality</td>
           <td rowspan="2" align="center">Action</td>
         </tr>
 	  <tr align="center">
           <td>Streaming</td>
+          <td>Channel</td>
           <td>Signal Lock</td>
           <td>Digital Lock</td>
           <td>Signal</td>
@@ -55,6 +56,7 @@
       {% else %}
 	     <td align="center">Idle</td>
 	  {% endif %}
+          <td align="center">{{ origin_status_dict[key]['Channel'] }}</td>
           <td align="center">{{ origin_status_dict[key]['SignalLock'] }}</td>
           <td align="center">{{ origin_status_dict[key]['PCRLock'] }}</td>
           <td align="right">{{ origin_status_dict[key]['Signal'] }}</td>

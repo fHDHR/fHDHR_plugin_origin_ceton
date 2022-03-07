@@ -58,6 +58,7 @@ class Ceton_HTML():
                 origin_status_dict["Tuner"+str(i)] = {}
                 origin_status_dict["Tuner" + str(i)]['Transport'] = self.plugin_utils.origin.get_ceton_getvar(i, "TransportState")
                 origin_status_dict["Tuner"+str(i)]['HWState'] = self.devinuse("/dev/ceton/ctn91xx_mpeg0_%s" % i)
+                origin_status_dict["Tuner"+str(i)]['Channel'] = self.plugin_utils.origin.get_ceton_getvar(i, "Signal_Channel")
                 origin_status_dict["Tuner"+str(i)]['SignalLock'] = self.plugin_utils.origin.get_ceton_getvar(i, "SignalCarrierLock")
                 origin_status_dict["Tuner"+str(i)]['PCRLock'] = self.plugin_utils.origin.get_ceton_getvar(i, "SignalPCRLock")
                 origin_status_dict["Tuner"+str(i)]['Signal'] = self.plugin_utils.origin.get_ceton_getvar(i, "Signal_Level")
