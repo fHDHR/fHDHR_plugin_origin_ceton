@@ -54,6 +54,7 @@ class Plugin_OBJ():
                       "ProgramNumber": "&s=mux&v=ProgramNumber",
                       "CopyProtectionStatus": "&s=diag&v=CopyProtectionStatus",
                       "Temperature": "&s=diag&v=Temperature",
+                      "Signal_Channel": "&s=diag&v=Signal_Channel",
                       "Signal_Level": "&s=diag&v=Signal_Level",
                       "Signal_SNR": "&s=diag&v=Signal_SNR",
                       "Signal_BER": "&s=tuner&v=BER",
