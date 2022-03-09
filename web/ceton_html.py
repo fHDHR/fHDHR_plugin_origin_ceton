@@ -47,7 +47,7 @@ class Ceton_HTML():
 
     def get(self, *args):
 
-        if self.origin.setup_success:
+        if self.origin_obj.setup_success:
             origin_status_dict = {"Setup": "Success"}
             origin_status_dict["Temp"] = self.plugin_utils.origin_obj.get_ceton_getvar(0, "Temperature")
             origin_status_dict["HWType"] = self.hwtype
