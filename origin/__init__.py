@@ -12,7 +12,7 @@ class Plugin_OBJ():
     def __init__(self, plugin_utils):
         self.plugin_utils = plugin_utils
 
-        if not self.ceton_ip: 
+        if not self.ceton_ip:
             raise fHDHR.exceptions.OriginSetupError("Ceton IP not set.")
 
         hwtype = self.get_ceton_getvar(0, "HostConnection")
@@ -125,7 +125,7 @@ class Plugin_OBJ():
 
         if not self.ceton_pcie:
             dest_ip = self.plugin_utils.config.dict["fhdhr"]["address"]
-            dest_port =  port
+            dest_port = port
         else:
             dest_ip = self.pcie_ip
             dest_port = 8000 + int(instance)

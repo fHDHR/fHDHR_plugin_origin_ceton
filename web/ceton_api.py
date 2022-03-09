@@ -21,7 +21,7 @@ class Ceton_API():
         redirect_url = request.args.get('redirect', default=None, type=str)
 
         if method == "close":
-            self.plugin_utils.origin.startstop_ceton_tuner(tuner_number, 0)
+            self.plugin_utils.origin_obj.startstop_ceton_tuner(tuner_number, 0)
 
         if redirect_url:
             return redirect(redirect_url)
