@@ -223,7 +223,6 @@ class Plugin_OBJ():
         return cleaned_channels
 
     def get_channel_stream(self, chandict, stream_args):
-
         found, instance = self.get_ceton_tuner_status(chandict)
 
         # 1 to start or 0 to stop
@@ -254,12 +253,12 @@ class Plugin_OBJ():
         else:
             streamurl = None
 
-        stream_info = {"url": streamurl}
+        stream_info = {"url": streamurl, "tuner": instance}
 
         return stream_info
 
-    def close_stream(self, instance, args):
-
-        self.startstop_ceton_tuner(instance, 0)
-
+    def close_stream(self, instance, stream_args):
+        closetuner = stream_args["stream_info"]["tuner"]
+        self.plugin_utils.logger.noob('Closing Ceton tuner %s (fHDHR tuner %s)' % (closetuner, instance))
+        self.startstop_ceton_tuner(closetuner, 0)
         return
