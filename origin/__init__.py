@@ -12,7 +12,7 @@ class Plugin_OBJ():
     def __init__(self, plugin_utils):
         self.plugin_utils = plugin_utils
 
-        if not self.ceton_ip: 
+        if not self.ceton_ip:
             raise fHDHR.exceptions.OriginSetupError("Ceton IP not set.")
 
         hwtype = self.get_ceton_getvar(0, "HostConnection")
@@ -54,6 +54,7 @@ class Plugin_OBJ():
                       "ProgramNumber": "&s=mux&v=ProgramNumber",
                       "CopyProtectionStatus": "&s=diag&v=CopyProtectionStatus",
                       "Temperature": "&s=diag&v=Temperature",
+                      "Signal_Channel": "&s=diag&v=Signal_Channel",
                       "Signal_Level": "&s=diag&v=Signal_Level",
                       "Signal_SNR": "&s=diag&v=Signal_SNR",
                       "Signal_BER": "&s=tuner&v=BER",
@@ -124,7 +125,7 @@ class Plugin_OBJ():
 
         if not self.ceton_pcie:
             dest_ip = self.plugin_utils.config.dict["fhdhr"]["address"]
-            dest_port =  port
+            dest_port = port
         else:
             dest_ip = self.pcie_ip
             dest_port = 8000 + int(instance)
@@ -137,8 +138,8 @@ class Plugin_OBJ():
         #                    'Content-Type': 'application/json',
         #                    'User-Agent': "curl/7.64.1"}
 
-        # StartStop ... OK to Stop tuner for direct (and safe), but do not Start => or blocks direct!
-        if not (startstop and self.stream_method == 'direct'):
+        # StartStop ... OK to Stop tuner for pcie (and safe), but do not Start => or blocks pcie (/dev)!
+        if not (startstop and self.ceton_pcie):
             try:
                 StartStopUrlReq = self.plugin_utils.web.session.post(StartStopUrl, StartStop_data)
                 StartStopUrlReq.raise_for_status()
@@ -222,7 +223,6 @@ class Plugin_OBJ():
         return cleaned_channels
 
     def get_channel_stream(self, chandict, stream_args):
-
         found, instance = self.get_ceton_tuner_status(chandict)
 
         # 1 to start or 0 to stop
@@ -247,22 +247,18 @@ class Plugin_OBJ():
                 self.plugin_utils.logger.info('Initiate streaming channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
                 streamurl = "udp://127.0.0.1:%s" % port
             else:
-                if self.stream_method == 'direct':
-                    self.plugin_utils.logger.info('Initiate PCIe direct streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
-                    streamurl = "/dev/ceton/ctn91xx_mpeg0_%s" % instance
-                else:
-                    self.plugin_utils.logger.info('Initiate rtp (udp) streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
-                    streamurl = "udp://%s:800%s" % (self.pcie_ip, instance)
-            self.plugin_utils.logger.info('Ceton tuner %s streamurl set, to: %s' % (instance, streamurl))
+                # PCIe, only use /dev, not rtp => no additional logic needed to handle this then, and can still change stream_method (direct, ffmpeg)
+                self.plugin_utils.logger.info('Initiate PCIe direct streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
+                streamurl = "/dev/ceton/ctn91xx_mpeg0_%s" % instance
         else:
             streamurl = None
 
-        stream_info = {"url": streamurl}
+        stream_info = {"url": streamurl, "tuner": instance}
 
         return stream_info
 
-    def close_stream(self, instance, args):
-
-        self.startstop_ceton_tuner(instance, 0)
-
+    def close_stream(self, instance, stream_args):
+        closetuner = stream_args["stream_info"]["tuner"]
+        self.plugin_utils.logger.noob('Closing Ceton tuner %s (fHDHR tuner %s)' % (closetuner, instance))
+        self.startstop_ceton_tuner(closetuner, 0)
         return
