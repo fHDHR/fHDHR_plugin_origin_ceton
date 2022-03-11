@@ -98,7 +98,7 @@ class Plugin_OBJ():
             # Not PCIe card, so don't check device
             return False
 
-    def get_ceton_tuner_status(self, chandict):
+    def get_ceton_tuner_status(self, chandict, scan=False):
         found = 0
         count = int(self.tuners)
         for instance in range(count):
@@ -111,9 +111,10 @@ class Plugin_OBJ():
                 self.plugin_utils.logger.info('Selected Ceton tuner#: %s' % instance)
                 # And, clear tunerstatus (just in case external client stopped using it)
                 self.tunerstatus[str(instance)] = {"status": "Inactive"}
-                # Return needed info now
-                found = 1
-                break
+                # Return needed info now (if not in scan mode)
+                if not scan:
+                    found = 1
+                    break
             else:
                 # Tuner is in use, flag as external if not expected to be (in use)
                 if self.tunerstatus[str(instance)]['status'] != "Active":

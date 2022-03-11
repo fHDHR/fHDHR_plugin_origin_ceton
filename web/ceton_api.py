@@ -23,7 +23,7 @@ class Ceton_API():
             self.plugin_utils.origin_obj.startstop_ceton_tuner(tuner_number, 0)
 
         if method == "status":
-            self.plugin_utils.origin_obj.get_ceton_tuner_status(None)
+            self.plugin_utils.origin_obj.get_ceton_tuner_status(None, scan=True)
             return self.plugin_utils.origin_obj.tunerstatus
 
         if redirect_url:
