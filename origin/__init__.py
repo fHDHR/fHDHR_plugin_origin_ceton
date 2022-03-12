@@ -15,19 +15,35 @@ class Plugin_OBJ():
         if not self.ceton_ip:
             raise fHDHR.exceptions.OriginSetupError("Ceton IP not set.")
 
-        hwtype = self.get_ceton_getvar(0, "HostConnection")
-        self.plugin_utils.logger.info('Ceton hardware type: %s' % hwtype)
-        if 'pci' in hwtype:
-            self.ceton_pcie = True
-            if not self.pcie_ip:
-                raise fHDHR.exceptions.OriginSetupError("Ceton PCIe IP not set.")
-        else:
-            self.ceton_pcie = False
+        devices = self.ceton_ip
+        if not isinstance(devices, list):
+            devices = [devices]
+
+        device_tuners = self.device_tuners
+        if not isinstance(device_tuners, list):
+            device_tuners = [device_tunres]
 
         self.tunerstatus = {}
-        count = int(self.tuners)
-        for i in range(count):
-            self.startstop_ceton_tuner(i, 0)
+
+        tuner_tmp_count = 0
+
+        for device, tuners in zip(devices, device_tuners):
+            hwtype = self.get_ceton_getvar(device, 0, "HostConnection")
+            self.plugin_utils.logger.info('Ceton hardware type: %s' % hwtype)
+
+            count = int(tuners)
+            for i in range(count):
+                self.tunerstatus[str(tuner_tmp_count)] = {"ceton_ip": device}
+                self.tunerstatus[str(tuner_tmp_count)]['ceton_tuner'] = str(i)
+
+                if 'pci' in hwtype:
+                    self.tunerstatus[str(tuner_tmp_count)]['ceton_pcie']  = True
+                else:
+                    self.tunerstatus[str(tuner_tmp_count)]['ceton_pcie']  = False
+
+                self.startstop_ceton_tuner(tuner_tmp_count, 0)
+                tuner_tmp_count += 1
+
 
     @property
     def config_dict(self):
@@ -36,6 +52,10 @@ class Plugin_OBJ():
     @property
     def tuners(self):
         return self.config_dict["tuners"]
+
+    @property
+    def device_tuners(self):
+        return self.config_dict["device_tuners"]
 
     @property
     def stream_method(self):
@@ -49,7 +69,7 @@ class Plugin_OBJ():
     def pcie_ip(self):
         return self.plugin_utils.config.dict["ceton"]["pcie_ip"]
 
-    def get_ceton_getvar(self, instance, query):
+    def get_ceton_getvar(self, device, instance, query):
         query_type = {
                       "Frequency": "&s=tuner&v=Frequency",
                       "ProgramNumber": "&s=mux&v=ProgramNumber",
@@ -70,7 +90,7 @@ class Plugin_OBJ():
                       "OOBStatus": "&s=diag&v=OOB_Status",
         }
 
-        getVarUrl = ('http://%s/get_var?i=%s%s' % (self.ceton_ip, instance, query_type[query]))
+        getVarUrl = ('http://%s/get_var?i=%s%s' % (device, instance, query_type[query]))
 
         try:
             getVarUrlReq = self.plugin_utils.web.session.get(getVarUrl)
@@ -84,7 +104,7 @@ class Plugin_OBJ():
         return result.group(1)
 
     def devinuse(self, filename):
-        if self.ceton_pcie:
+        if self.tunerstatus['0']['ceton_pcie']:
             try:
                 subprocess.check_output(['fuser', filename], stderr=subprocess.DEVNULL)
                 # man: if access has been found, fuser returns zero
@@ -103,14 +123,16 @@ class Plugin_OBJ():
         count = int(self.tuners)
         for instance in range(count):
 
-            transport = self.get_ceton_getvar(instance, "TransportState")
+            device = self.tunerstatus[str(instance)]['ceton_ip']
+            instance = self.tunerstatus[str(instance)]['ceton_tuner']
+            transport = self.get_ceton_getvar(device, instance, "TransportState")
             hwinuse = self.devinuse("/dev/ceton/ctn91xx_mpeg0_%s" % instance)
             # Check to see if transport on (rtp/udp streaming), or direct HW device access (pcie)
             # This also handles the case of another client accessing the tuner!
             if (transport == "STOPPED") and (not hwinuse):
                 self.plugin_utils.logger.info('Selected Ceton tuner#: %s' % instance)
                 # And, clear tunerstatus (just in case external client stopped using it)
-                self.tunerstatus[str(instance)] = {"status": "Inactive"}
+                self.tunerstatus[str(instance)]['status'] =  "Inactive"
                 # Return needed info now (if not in scan mode)
                 if not scan:
                     found = 1
@@ -118,7 +140,7 @@ class Plugin_OBJ():
             else:
                 # Tuner is in use, flag as external if not expected to be (in use)
                 if self.tunerstatus[str(instance)]['status'] != "Active":
-                    self.tunerstatus[str(instance)] = {"status": "External"}
+                    self.tunerstatus[str(instance)]['status'] = "External"
 
         return found, instance
 
@@ -126,19 +148,20 @@ class Plugin_OBJ():
         if not startstop:
             port = 0
             self.plugin_utils.logger.info('Ceton tuner %s to be stopped' % str(instance))
-            self.tunerstatus[str(instance)] = { "status": "Inactive" }
+            self.tunerstatus[str(instance)] ["status"]= "Inactive" 
         else:
             port = randint(41001, 49999)
             self.plugin_utils.logger.info('Ceton tuner %s to be started' % str(instance))
             self.tunerstatus[str(instance)]["status"] = "Active"
 
-        StartStopUrl = 'http://%s/stream_request.cgi' % self.ceton_ip
+        StartStopUrl = 'http://%s/stream_request.cgi' % self.tunerstatus[str(instance)]['ceton_ip']
 
-        if not self.ceton_pcie:
+
+        if not self.tunerstatus[str(instance)]['ceton_pcie']:
             dest_ip = self.plugin_utils.config.dict["fhdhr"]["address"]
             dest_port = port
         else:
-            dest_ip = self.pcie_ip
+            dest_ip = self.tunerstatus[str(instance)]['ceton_ip']
             dest_port = 8000 + int(instance)
         StartStop_data = {"instance_id": instance,
                           "dest_ip": dest_ip,
@@ -150,7 +173,7 @@ class Plugin_OBJ():
         #                    'User-Agent': "curl/7.64.1"}
 
         # StartStop ... OK to Stop tuner for pcie (and safe), but do not Start => or blocks pcie (/dev)!
-        if not (startstop and self.ceton_pcie):
+        if not (startstop and self.tunerstatus[str(instance)]['ceton_pcie']):
             try:
                 StartStopUrlReq = self.plugin_utils.web.session.post(StartStopUrl, StartStop_data)
                 StartStopUrlReq.raise_for_status()
@@ -161,7 +184,7 @@ class Plugin_OBJ():
         return port
 
     def set_ceton_tuner(self, chandict, instance):
-        tuneChannelUrl = 'http://%s/channel_request.cgi' % self.ceton_ip
+        tuneChannelUrl = 'http://%s/channel_request.cgi' % self.tunerstatus[str(instance)]['ceton_ip']
         tuneChannel_data = {"instance_id": instance,
                             "channel": chandict['origin_number']}
 
@@ -176,9 +199,10 @@ class Plugin_OBJ():
 
     def get_channels(self):
         cleaned_channels = []
+        instance = 0 #Use the first tuner
         url_headers = {'accept': 'application/xml;q=0.9, */*;q=0.8'}
 
-        count_url = 'http://%s/view_channel_map.cgi?page=1' % self.ceton_ip
+        count_url = 'http://%s/view_channel_map.cgi?page=1' % self.tunerstatus[str(instance)]['ceton_ip']
 
         try:
             countReq = self.plugin_utils.web.session.get(count_url, headers=url_headers)
@@ -192,7 +216,7 @@ class Plugin_OBJ():
         page = 0
 
         while True:
-            stations_url = "http://%s/view_channel_map.cgi?page=%s&xml=1" % (self.ceton_ip, page)
+            stations_url = "http://%s/view_channel_map.cgi?page=%s&xml=1" % (self.tunerstatus[str(instance)]['ceton_ip'], page)
 
             try:
                 stationsReq = self.plugin_utils.web.session.get(stations_url, headers=url_headers)
@@ -250,12 +274,13 @@ class Plugin_OBJ():
         else:
             tuned = None
 
-        self.get_ceton_getvar(instance, "Frequency")
-        self.get_ceton_getvar(instance, "ProgramNumber")
-        self.get_ceton_getvar(instance, "CopyProtectionStatus")
+        device = self.tunerstatus[str(instance)]['ceton_op']
+        self.get_ceton_getvar(device, instance, "Frequency")
+        self.get_ceton_getvar(device, instance, "ProgramNumber")
+        self.get_ceton_getvar(device, instance, "CopyProtectionStatus")
 
         if tuned:
-            if not self.ceton_pcie:
+            if not self.tunerstatus[instance]['ceton_pcie']:
                 self.plugin_utils.logger.info('Initiate streaming channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
                 streamurl = "udp://127.0.0.1:%s" % port
             else:

@@ -21,7 +21,8 @@ class Ceton_HTML():
         self.template = StringIO()
         self.template.write(open(self.template_file).read())
 
-        self.hwtype = self.plugin_utils.origin_obj.get_ceton_getvar(0, "HostConnection")
+        device = self.plugin_utils.origin_obj.tunerstatus['0']['ceton_ip']
+        self.hwtype = self.plugin_utils.origin_obj.get_ceton_getvar(device, 0, "HostConnection")
         if 'pci' in self.hwtype:
             self.ceton_pcie = True
         else:
@@ -48,24 +49,25 @@ class Ceton_HTML():
     def get(self, *args):
 
         if self.origin_obj.setup_success:
+            device = self.plugin_utils.origin_obj.tunerstatus['0']['ceton_ip']
             origin_status_dict = {"Setup": "Success"}
-            origin_status_dict["Temp"] = self.plugin_utils.origin_obj.get_ceton_getvar(0, "Temperature")
+            origin_status_dict["Temp"] = self.plugin_utils.origin_obj.get_ceton_getvar(device, 0, "Temperature")
             origin_status_dict["HWType"] = self.hwtype
-            origin_status_dict["HostHardware"] = self.plugin_utils.origin_obj.get_ceton_getvar(0, "HostHardware")
-            origin_status_dict["HostFirmware"] = self.plugin_utils.origin_obj.get_ceton_getvar(0, "HostFirmware")
-            origin_status_dict["HostSerial"] = self.plugin_utils.origin_obj.get_ceton_getvar(0, "HostSerial")
+            origin_status_dict["HostHardware"] = self.plugin_utils.origin_obj.get_ceton_getvar(device, 0, "HostHardware")
+            origin_status_dict["HostFirmware"] = self.plugin_utils.origin_obj.get_ceton_getvar(device, 0, "HostFirmware")
+            origin_status_dict["HostSerial"] = self.plugin_utils.origin_obj.get_ceton_getvar(device, 0, "HostSerial")
 
             for i in range(int(self.fhdhr.config.dict["ceton"]["tuners"])):
                 origin_status_dict["Tuner"+str(i)] = {}
-                origin_status_dict["Tuner" + str(i)]['Transport'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "TransportState")
+                origin_status_dict["Tuner" + str(i)]['Transport'] = self.plugin_utils.origin_obj.get_ceton_getvar(device, i, "TransportState")
                 origin_status_dict["Tuner"+str(i)]['HWState'] = self.devinuse("/dev/ceton/ctn91xx_mpeg0_%s" % i)
-                origin_status_dict["Tuner"+str(i)]['Channel'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "Signal_Channel")
-                origin_status_dict["Tuner"+str(i)]['SignalLock'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "SignalCarrierLock")
-                origin_status_dict["Tuner"+str(i)]['PCRLock'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "SignalPCRLock")
-                origin_status_dict["Tuner"+str(i)]['Signal'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "Signal_Level")
-                origin_status_dict["Tuner"+str(i)]['SNR'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "Signal_SNR")
-                origin_status_dict["Tuner"+str(i)]['BER'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "Signal_BER")
-                origin_status_dict["Tuner"+str(i)]['Modulation'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "Signal_Modulation")
+                origin_status_dict["Tuner"+str(i)]['Channel'] = self.plugin_utils.origin_obj.get_ceton_getvar(device, i, "Signal_Channel")
+                origin_status_dict["Tuner"+str(i)]['SignalLock'] = self.plugin_utils.origin_obj.get_ceton_getvar(device, i, "SignalCarrierLock")
+                origin_status_dict["Tuner"+str(i)]['PCRLock'] = self.plugin_utils.origin_obj.get_ceton_getvar(device, i, "SignalPCRLock")
+                origin_status_dict["Tuner"+str(i)]['Signal'] = self.plugin_utils.origin_obj.get_ceton_getvar(device, i, "Signal_Level")
+                origin_status_dict["Tuner"+str(i)]['SNR'] = self.plugin_utils.origin_obj.get_ceton_getvar(device, i, "Signal_SNR")
+                origin_status_dict["Tuner"+str(i)]['BER'] = self.plugin_utils.origin_obj.get_ceton_getvar(device, i, "Signal_BER")
+                origin_status_dict["Tuner"+str(i)]['Modulation'] = self.plugin_utils.origin_obj.get_ceton_getvar(device, i, "Signal_Modulation")
         else:
             origin_status_dict = {"Setup": "Failed"}
 
