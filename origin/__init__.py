@@ -24,6 +24,7 @@ class Plugin_OBJ():
         else:
             self.ceton_pcie = False
 
+        self.tunerstatus = {}
         count = int(self.tuners)
         for i in range(count):
             self.startstop_ceton_tuner(i, 0)
@@ -97,7 +98,7 @@ class Plugin_OBJ():
             # Not PCIe card, so don't check device
             return False
 
-    def get_ceton_tuner_status(self, chandict):
+    def get_ceton_tuner_status(self, chandict, scan=False):
         found = 0
         count = int(self.tuners)
         for instance in range(count):
@@ -108,8 +109,16 @@ class Plugin_OBJ():
             # This also handles the case of another client accessing the tuner!
             if (transport == "STOPPED") and (not hwinuse):
                 self.plugin_utils.logger.info('Selected Ceton tuner#: %s' % instance)
-                found = 1
-                break
+                # And, clear tunerstatus (just in case external client stopped using it)
+                self.tunerstatus[str(instance)] = {"status": "Inactive"}
+                # Return needed info now (if not in scan mode)
+                if not scan:
+                    found = 1
+                    break
+            else:
+                # Tuner is in use, flag as external if not expected to be (in use)
+                if self.tunerstatus[str(instance)]['status'] != "Active":
+                    self.tunerstatus[str(instance)] = {"status": "External"}
 
         return found, instance
 
@@ -117,9 +126,11 @@ class Plugin_OBJ():
         if not startstop:
             port = 0
             self.plugin_utils.logger.info('Ceton tuner %s to be stopped' % str(instance))
+            self.tunerstatus[str(instance)] = { "status": "Inactive" }
         else:
             port = randint(41001, 49999)
             self.plugin_utils.logger.info('Ceton tuner %s to be started' % str(instance))
+            self.tunerstatus[str(instance)]["status"] = "Active"
 
         StartStopUrl = 'http://%s/stream_request.cgi' % self.ceton_ip
 
@@ -224,6 +235,7 @@ class Plugin_OBJ():
 
     def get_channel_stream(self, chandict, stream_args):
         found, instance = self.get_ceton_tuner_status(chandict)
+        self.tunerstatus[str(instance)]["stream_args"] = stream_args
 
         # 1 to start or 0 to stop
         if found:
