@@ -28,18 +28,22 @@ class Plugin_OBJ():
         tuner_tmp_count = 0
 
         for device, tuners in zip(devices, device_tuners):
-            hwtype = self.get_ceton_getvar(device, 0, "HostConnection")
-            self.plugin_utils.logger.info('Ceton hardware type: %s' % hwtype)
-
+            port = 49990
             count = int(tuners)
             for i in range(count):
                 self.tunerstatus[str(tuner_tmp_count)] = {"ceton_ip": device}
                 self.tunerstatus[str(tuner_tmp_count)]['ceton_tuner'] = str(i)
 
+                if i == 0:
+                    hwtype = self.get_ceton_getvar( tuner_tmp_count, "HostConnection")
+                    self.plugin_utils.logger.info('Ceton hardware type: %s' % hwtype)
+
                 if 'pci' in hwtype:
                     self.tunerstatus[str(tuner_tmp_count)]['ceton_pcie']  = True
+                    self.tunerstatus[str(tuner_tmp_count)]['streamurl'] = "/dev/ceton/ctn91xx_mpeg0_%s" % i
                 else:
                     self.tunerstatus[str(tuner_tmp_count)]['ceton_pcie']  = False
+                    self.tunerstatus[str(tuner_tmp_count)]['streamurl'] = "udp://127.0.0.1:%s" % (port + i)
 
                 self.startstop_ceton_tuner(tuner_tmp_count, 0)
                 tuner_tmp_count += 1
@@ -69,7 +73,7 @@ class Plugin_OBJ():
     def pcie_ip(self):
         return self.plugin_utils.config.dict["ceton"]["pcie_ip"]
 
-    def get_ceton_getvar(self, device, instance, query):
+    def get_ceton_getvar(self, instance, query):
         query_type = {
                       "Frequency": "&s=tuner&v=Frequency",
                       "ProgramNumber": "&s=mux&v=ProgramNumber",
@@ -90,7 +94,7 @@ class Plugin_OBJ():
                       "OOBStatus": "&s=diag&v=OOB_Status",
         }
 
-        getVarUrl = ('http://%s/get_var?i=%s%s' % (device, instance, query_type[query]))
+        getVarUrl = ('http://%s/get_var?i=%s%s' % (self.tunerstatus[str(instance)]['ceton_ip'], self.tunerstatus[str(instance)]['ceton_tuner'], query_type[query]))
 
         try:
             getVarUrlReq = self.plugin_utils.web.session.get(getVarUrl)
@@ -125,7 +129,7 @@ class Plugin_OBJ():
 
             device = self.tunerstatus[str(instance)]['ceton_ip']
             instance = self.tunerstatus[str(instance)]['ceton_tuner']
-            transport = self.get_ceton_getvar(device, instance, "TransportState")
+            transport = self.get_ceton_getvar(instance, "TransportState")
             hwinuse = self.devinuse("/dev/ceton/ctn91xx_mpeg0_%s" % instance)
             # Check to see if transport on (rtp/udp streaming), or direct HW device access (pcie)
             # This also handles the case of another client accessing the tuner!
@@ -275,18 +279,17 @@ class Plugin_OBJ():
             tuned = None
 
         device = self.tunerstatus[str(instance)]['ceton_op']
-        self.get_ceton_getvar(device, instance, "Frequency")
-        self.get_ceton_getvar(device, instance, "ProgramNumber")
-        self.get_ceton_getvar(device, instance, "CopyProtectionStatus")
+        self.get_ceton_getvar(instance, "Frequency")
+        self.get_ceton_getvar(instance, "ProgramNumber")
+        self.get_ceton_getvar(instance, "CopyProtectionStatus")
 
         if tuned:
-            if not self.tunerstatus[instance]['ceton_pcie']:
+            if not self.tunerstatus[str(instance)]['ceton_pcie']:
                 self.plugin_utils.logger.info('Initiate streaming channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
-                streamurl = "udp://127.0.0.1:%s" % port
             else:
                 # PCIe, only use /dev, not rtp => no additional logic needed to handle this then, and can still change stream_method (direct, ffmpeg)
                 self.plugin_utils.logger.info('Initiate PCIe direct streaming, channel %s from Ceton tuner#: %s ' % (chandict['origin_number'], instance))
-                streamurl = "/dev/ceton/ctn91xx_mpeg0_%s" % instance
+            streamurl = self.tunerstatus[str(instance)]['streamurl']
         else:
             streamurl = None
 
