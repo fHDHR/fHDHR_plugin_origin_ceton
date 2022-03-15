@@ -94,6 +94,8 @@ class Plugin_OBJ():
                       "SignalCarrierLock": "&s=diag&v=Signal_Carrier_Lock",
                       "SignalPCRLock": "&s=diag&v=Signal_PCR_Lock",
                       "OOBStatus": "&s=diag&v=OOB_Status",
+                      "Streaming_IP": "&s=diag&v=Streaming_IP",
+                      "Streaming_Port": "&s=diag&v=Streaming_Port",
         }
 
         getVarUrl = ('http://%s/get_var?i=%s%s' % (self.tunerstatus[str(instance)]['ceton_ip'], self.tunerstatus[str(instance)]['ceton_tuner'], query_type[query]))
@@ -109,19 +111,16 @@ class Plugin_OBJ():
 
         return result.group(1)
 
-    def devinuse(self, filename):
-        if self.tunerstatus['0']['ceton_pcie']:
-            try:
-                subprocess.check_output(['fuser', filename], stderr=subprocess.DEVNULL)
-                # man: if access has been found, fuser returns zero
-                # => Return True, device is in use
-                return True
-            except subprocess.CalledProcessError:
-                # man: fuser returns a non-zero return code if none of the specified files is accessed
-                # => Return False, device is not in use
-                return False
-        else:
-            # Not PCIe card, so don't check device
+    def devinuse(self, instance):
+        filename = ("/dev/ceton/ctn91xx_mpeg0_%s" % instance)
+        try:
+            subprocess.check_output(['fuser', filename], stderr=subprocess.DEVNULL)
+            # man: if access has been found, fuser returns zero
+            # => Return True, device is in use
+            return True
+        except subprocess.CalledProcessError:
+            # man: fuser returns a non-zero return code if none of the specified files is accessed
+            # => Return False, device is not in use
             return False
 
     def get_ceton_tuner_status(self, chandict, scan=False):
@@ -129,10 +128,12 @@ class Plugin_OBJ():
         count = int(self.tuners)
         for instance in range(count):
 
+            hwinuse = False
             device = self.tunerstatus[str(instance)]['ceton_ip']
             instance = self.tunerstatus[str(instance)]['ceton_tuner']
             transport = self.get_ceton_getvar(instance, "TransportState")
-            hwinuse = self.devinuse("/dev/ceton/ctn91xx_mpeg0_%s" % instance)
+            if self.tunerstatus[str(instance)]['ceton_pcie']:
+                hwinuse = self.devinuse(instance)
             # Check to see if transport on (rtp/udp streaming), or direct HW device access (pcie)
             # This also handles the case of another client accessing the tuner!
             if (transport == "STOPPED") and (not hwinuse):
@@ -169,7 +170,6 @@ class Plugin_OBJ():
                           "dest_port": dest_port,
                           "protocol": 0,
                           "start": startstop}
-        print (StartStop_data)
         # StartStopUrl_headers = {
         #                    'Content-Type': 'application/json',
         #                    'User-Agent': "curl/7.64.1"}
@@ -182,6 +182,7 @@ class Plugin_OBJ():
         except self.plugin_utils.web.exceptions.HTTPError as err:
             self.plugin_utils.logger.error('Error while setting station stream: %s' % err)
             return None
+
 
         return dest_port
 
