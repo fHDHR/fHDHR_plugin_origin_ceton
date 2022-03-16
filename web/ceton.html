@@ -49,10 +49,10 @@
       if "Tuner" in key: %}
         <tr>
           <td align="center">{{ key[5:]  }}</td>
-	  {% if (origin_status_dict[key]['Transport'] == "PLAYING") %}
-	     <td align="center">RTP</td>
-	  {% elif (origin_status_dict[key]['HWState'] == "In Use") %}
+	  {% if (origin_status_dict[key]['HWState'] == "In Use") %}
 	     <td align="center">Direct</td>
+	  {% elif (origin_status_dict[key]['Transport'] == "PLAYING") %}
+	     <td align="center">RTP</td>
       {% else %}
 	     <td align="center">Idle</td>
 	  {% endif %}
