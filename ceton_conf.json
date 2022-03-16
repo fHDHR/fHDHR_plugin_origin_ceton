@@ -3,17 +3,16 @@
           "ceton_ip":{
                     "value": "none",
                     "config_file": true,
-                    "config_web": true
-                },
-          "pcie_ip":{
-                    "value": "none",
-                    "config_file": true,
-                    "config_web": true
+                    "config_web": true,
+                    "valid_options": "list",
+                    "description": "A Comma Seperated list of Ceton device IP addresses"
                 },
           "tuners":{
                     "value": "4",
                     "config_file": true,
-                    "config_web": true
+                    "config_web": true,
+                    "valid_options": "list",
+                    "description": "A Comma Seperated list of tuners for each Ceton device"
                 },
           "stream_method":{
                     "value": "ffmpeg",

@@ -48,6 +48,7 @@ class Ceton_HTML():
     def get(self, *args):
 
         if self.origin_obj.setup_success:
+            device = self.plugin_utils.origin_obj.tunerstatus['0']['ceton_ip']
             origin_status_dict = {"Setup": "Success"}
             origin_status_dict["Temp"] = self.plugin_utils.origin_obj.get_ceton_getvar(0, "Temperature")
             origin_status_dict["HWType"] = self.hwtype
@@ -58,7 +59,7 @@ class Ceton_HTML():
             for i in range(int(self.fhdhr.config.dict["ceton"]["tuners"])):
                 origin_status_dict["Tuner"+str(i)] = {}
                 origin_status_dict["Tuner" + str(i)]['Transport'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "TransportState")
-                origin_status_dict["Tuner"+str(i)]['HWState'] = self.devinuse("/dev/ceton/ctn91xx_mpeg0_%s" % i)
+                origin_status_dict["Tuner"+str(i)]['HWState'] = self.devinuse(str(i))
                 origin_status_dict["Tuner"+str(i)]['Channel'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "Signal_Channel")
                 origin_status_dict["Tuner"+str(i)]['SignalLock'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "SignalCarrierLock")
                 origin_status_dict["Tuner"+str(i)]['PCRLock'] = self.plugin_utils.origin_obj.get_ceton_getvar(i, "SignalPCRLock")
