@@ -4,30 +4,35 @@
 
     <h4 style="text-align: center;">{{ origin_name }} Status</h4>
 
-      <table class="center" style="width:50%">
+      {% for cntdevice in range(origin_status_dict['Devices']) %}
+        <table class="center" style="width:50%">
+        {% set strdevice = 'Device' + cntdevice|string %}
+        <tr>
+          <td align="center" colspan="100">{{ 'Device %d' % cntdevice }}</td>
+        </tr>
         <tr>
           <td colspan="2">Setup</td>
-          <td colspan="100">{{ origin_status_dict['Setup'] }}</td>
+          <td colspan="100">{{ origin_status_dict[strdevice]['Setup'] }}</td>
         </tr>
         <tr>
           <td colspan="2">Temperature</td>
-          <td colspan="100">{{ origin_status_dict['Temp'] }}</td>
+          <td colspan="100">{{ origin_status_dict[strdevice]['Temp'] }}</td>
         </tr>
         <tr>
           <td colspan="2">Hardware Type</td>
-          <td colspan="100">{{ origin_status_dict['HWType'] }}</td>
+          <td colspan="100">{{ origin_status_dict[strdevice]['HWType'] }}</td>
         </tr>
         <tr>
           <td colspan="2">Hardware Revision</td>
-          <td colspan="100">{{ origin_status_dict['HostHardware'] }}</td>
+          <td colspan="100">{{ origin_status_dict[strdevice]['HostHardware'] }}</td>
         </tr>
         <tr>
           <td colspan="2">Firmware Version</td>
-          <td colspan="100">{{ origin_status_dict['HostFirmware'] }}</td>
+          <td colspan="100">{{ origin_status_dict[strdevice]['HostFirmware'] }}</td>
         </tr>
         <tr>
           <td colspan="2">Serial Number</td>
-          <td colspan="100">{{ origin_status_dict['HostSerial'] }}</td>
+          <td colspan="100">{{ origin_status_dict[strdevice]['HostSerial'] }}</td>
         </tr>
         <tr>
           <td rowspan="2" align="center">Tuner</td>
@@ -35,7 +40,7 @@
           <td colspan="4" align="center">Signal Quality</td>
           <td rowspan="2" align="center">Action</td>
         </tr>
-	  <tr align="center">
+	    <tr align="center">
           <td>Streaming</td>
           <td>Channel</td>
           <td>Signal Lock</td>
@@ -44,31 +49,32 @@
           <td>SNR</td>
           <td>BER</td>
           <td>Modulation</td>
-      </tr>
-      {% for key in list(origin_status_dict.keys())
-      if "Tuner" in key: %}
-        <tr>
-          <td align="center">{{ key[5:]  }}</td>
-	  {% if (origin_status_dict[key]['Transport'] == "PLAYING") %}
-	     <td align="center">RTP</td>
-	  {% elif (origin_status_dict[key]['HWState'] == "In Use") %}
-	     <td align="center">Direct</td>
-      {% else %}
-	     <td align="center">Idle</td>
-	  {% endif %}
-          <td align="center">{{ origin_status_dict[key]['Channel'] }}</td>
-          <td align="center">{{ origin_status_dict[key]['SignalLock'] }}</td>
-          <td align="center">{{ origin_status_dict[key]['PCRLock'] }}</td>
-          <td align="right">{{ origin_status_dict[key]['Signal'] }}</td>
-          <td align="right">{{ origin_status_dict[key]['SNR'] }}</td>
-          <td align="right">{{ origin_status_dict[key]['BER'] }}</td>
-          <td align="center">{{ origin_status_dict[key]['Modulation'] }}</td>
-	  {% if (origin_status_dict[key]['Transport'] == "PLAYING") or (origin_status_dict[key]['HWState'] == "In Use") %}
-	     <td><button onclick="location.href='/api/ceton?method=close&tuner={{ key[5:] }}&redirect=%2Fceton'">Close</a></button></td>
-      {% else %}
-	     <td></td>
-	  {% endif %}
         </tr>
+        {% for key in list(origin_status_dict.keys()) %}
+          {% if ("Tuner" in key) and (cntdevice == origin_status_dict[key]['Device']) %}
+            <tr>
+              <td align="center">{{ key[5:]  }}</td>
+            {% if (origin_status_dict[key]['HWState'] == "In Use") %}
+               <td align="center">Direct</td>
+            {% elif (origin_status_dict[key]['Transport'] == "PLAYING") %}
+               <td align="center">RTP</td>
+            {% else %}
+               <td align="center">Idle</td>
+            {% endif %}
+                <td align="center">{{ origin_status_dict[key]['Channel'] }}</td>
+                <td align="center">{{ origin_status_dict[key]['SignalLock'] }}</td>
+                <td align="center">{{ origin_status_dict[key]['PCRLock'] }}</td>
+                <td align="right">{{ origin_status_dict[key]['Signal'] }}</td>
+                <td align="right">{{ origin_status_dict[key]['SNR'] }}</td>
+                <td align="right">{{ origin_status_dict[key]['BER'] }}</td>
+                <td align="center">{{ origin_status_dict[key]['Modulation'] }}</td>
+            {% if (origin_status_dict[key]['Transport'] == "PLAYING") or (origin_status_dict[key]['HWState'] == "In Use") %}
+               <td><button onclick="location.href='/api/ceton?method=close&tuner={{ key[5:] }}&redirect=%2Fceton'">Close</a></button></td>
+            {% endif %}
+          {% endif %}
+            </tr>
+        {% endfor %}
+        <br />
       {% endfor %}
 
 {% endblock %}
