@@ -26,12 +26,14 @@ class Plugin_OBJ():
         self.tunerstatus = {}
 
         tuner_tmp_count = 0
+        device_count = 0
 
         for device, tuners in zip(devices, device_tuners):
             port = 49990
             count = int(tuners)
             for i in range(count):
                 self.tunerstatus[str(tuner_tmp_count)] = {"ceton_ip": device}
+                self.tunerstatus[str(tuner_tmp_count)]['ceton_device'] = str(device_count)
                 self.tunerstatus[str(tuner_tmp_count)]['ceton_tuner'] = str(i)
 
                 if i == 0:
@@ -49,7 +51,7 @@ class Plugin_OBJ():
 
                 self.startstop_ceton_tuner(tuner_tmp_count, 0)
                 tuner_tmp_count += 1
-
+            device_count = device_count + 1
 
     @property
     def config_dict(self):
@@ -73,7 +75,7 @@ class Plugin_OBJ():
 
     @property
     def pcie_ip(self):
-        return self.plugin_utils.config.dict["ceton"]["pcie_ip"]
+        return self.config_dict["pcie_ip"]
 
     def get_ceton_getvar(self, instance, query):
         query_type = {
@@ -112,15 +114,18 @@ class Plugin_OBJ():
         return result.group(1)
 
     def devinuse(self, instance):
-        filename = ("/dev/ceton/ctn91xx_mpeg0_%s" % instance)
-        try:
-            subprocess.check_output(['fuser', filename], stderr=subprocess.DEVNULL)
-            # man: if access has been found, fuser returns zero
-            # => Return True, device is in use
-            return True
-        except subprocess.CalledProcessError:
-            # man: fuser returns a non-zero return code if none of the specified files is accessed
-            # => Return False, device is not in use
+        filename = self.tunerstatus[str(instance)]['streamurl']
+        if '/dev' in filename:
+            try:
+                subprocess.check_output(['fuser', filename], stderr=subprocess.DEVNULL)
+                # man: if access has been found, fuser returns zero
+                # => Return True, device is in use
+                return True
+            except subprocess.CalledProcessError:
+                # man: fuser returns a non-zero return code if none of the specified files is accessed
+                # => Return False, device is not in use
+                return False
+        else:
             return False
 
     def get_ceton_tuner_status(self, chandict, scan=False):
@@ -140,6 +145,7 @@ class Plugin_OBJ():
                 self.plugin_utils.logger.info('Selected Ceton tuner#: %s' % instance)
                 # And, clear tunerstatus (just in case external client stopped using it)
                 self.tunerstatus[str(instance)]['status'] =  "Inactive"
+                self.tunerstatus[str(instance)]['stream_args'] = {}
                 # Return needed info now (if not in scan mode)
                 if not scan:
                     found = 1
