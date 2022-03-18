@@ -18,10 +18,12 @@ class Plugin_OBJ():
         devices = self.ceton_ip
         if not isinstance(devices, list):
             devices = [devices]
+        self.config_dict["devices"] = devices
 
         device_tuners = self.device_tuners
         if not isinstance(device_tuners, list):
             device_tuners = [device_tuners]
+        self.config_dict["device_tuners"] = device_tuners
 
         self.tunerstatus = {}
 
