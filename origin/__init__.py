@@ -37,6 +37,10 @@ class Plugin_OBJ():
                 self.tunerstatus[str(tuner_tmp_count)] = {"ceton_ip": device}
                 self.tunerstatus[str(tuner_tmp_count)]['ceton_device'] = str(device_count)
                 self.tunerstatus[str(tuner_tmp_count)]['ceton_tuner'] = str(i)
+                self.tunerstatus[str(tuner_tmp_count)]['channel'] = self.get_ceton_getvar(tuner_tmp_count, "Signal_Channel")
+                self.tunerstatus[str(tuner_tmp_count)]['level'] = self.get_ceton_getvar(tuner_tmp_count, "Signal_Level")
+                self.tunerstatus[str(tuner_tmp_count)]['snr'] = self.get_ceton_getvar(tuner_tmp_count, "Signal_SNR")
+                self.tunerstatus[str(tuner_tmp_count)]['ber'] = self.get_ceton_getvar(tuner_tmp_count, "Signal_BER")
 
                 if i == 0:
                     hwtype = self.get_ceton_getvar( tuner_tmp_count, "HostConnection")
