@@ -37,10 +37,6 @@ class Plugin_OBJ():
                 self.tunerstatus[str(tuner_tmp_count)] = {"ceton_ip": device}
                 self.tunerstatus[str(tuner_tmp_count)]['ceton_device'] = str(device_count)
                 self.tunerstatus[str(tuner_tmp_count)]['ceton_tuner'] = str(i)
-                self.tunerstatus[str(tuner_tmp_count)]['channel'] = self.get_ceton_getvar(tuner_tmp_count, "Signal_Channel")
-                self.tunerstatus[str(tuner_tmp_count)]['level'] = self.get_ceton_getvar(tuner_tmp_count, "Signal_Level")
-                self.tunerstatus[str(tuner_tmp_count)]['snr'] = self.get_ceton_getvar(tuner_tmp_count, "Signal_SNR")
-                self.tunerstatus[str(tuner_tmp_count)]['ber'] = self.get_ceton_getvar(tuner_tmp_count, "Signal_BER")
 
                 if i == 0:
                     hwtype = self.get_ceton_getvar( tuner_tmp_count, "HostConnection")
@@ -143,6 +139,10 @@ class Plugin_OBJ():
             device = self.tunerstatus[str(instance)]['ceton_ip']
             instance = self.tunerstatus[str(instance)]['ceton_tuner']
             transport = self.get_ceton_getvar(instance, "TransportState")
+            self.tunerstatus[str(instance)]['channel'] = self.get_ceton_getvar(instance, "Signal_Channel")
+            self.tunerstatus[str(instance)]['level'] = self.get_ceton_getvar(instance, "Signal_Level")
+            self.tunerstatus[str(instance)]['snr'] = self.get_ceton_getvar(instance, "Signal_SNR")
+            self.tunerstatus[str(instance)]['ber'] = self.get_ceton_getvar(instance, "Signal_BER")
             if self.tunerstatus[str(instance)]['ceton_pcie']:
                 hwinuse = self.devinuse(instance)
             # Check to see if transport on (rtp/udp streaming), or direct HW device access (pcie)
