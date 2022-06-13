@@ -2,14 +2,15 @@ import base64
 import re
 import xmltodict
 import subprocess
+import threading
 
-from random import randint
 import fHDHR.exceptions
 
 
 class Plugin_OBJ():
 
     def __init__(self, plugin_utils):
+        self.lock = threading.Lock()
         self.plugin_utils = plugin_utils
 
         if not self.ceton_ip:
@@ -33,6 +34,7 @@ class Plugin_OBJ():
         for device, tuners in zip(devices, device_tuners):
             port = 49990
             count = int(tuners)
+            hwtype = ''
             for i in range(count):
                 self.tunerstatus[str(tuner_tmp_count)] = {"ceton_ip": device}
                 self.tunerstatus[str(tuner_tmp_count)]['ceton_device'] = str(device_count)
@@ -135,6 +137,7 @@ class Plugin_OBJ():
         count = int(self.tuners)
         for instance in range(count):
 
+            status = self.tunerstatus[str(instance)]['status']
             hwinuse = False
             device = self.tunerstatus[str(instance)]['ceton_ip']
             instance = self.tunerstatus[str(instance)]['ceton_tuner']
@@ -147,27 +150,49 @@ class Plugin_OBJ():
                 hwinuse = self.devinuse(instance)
             # Check to see if transport on (rtp/udp streaming), or direct HW device access (pcie)
             # This also handles the case of another client accessing the tuner!
-            if (transport == "STOPPED") and (not hwinuse):
-                self.plugin_utils.logger.info('Selected Ceton tuner#: %s' % instance)
-                # And, clear tunerstatus (just in case external client stopped using it)
-                self.tunerstatus[str(instance)]['status'] =  "Inactive"
-                self.tunerstatus[str(instance)]['stream_args'] = {}
+            if (status == 'Inactive') and (transport == "STOPPED") and (not hwinuse):
+                if not scan:
+                    self.plugin_utils.logger.info('Selected Ceton tuner#: %s' % str(instance))
+                else:
+                    self.plugin_utils.logger.debug('Scanning Ceton tuner#: %s' % str(instance))
                 # Return needed info now (if not in scan mode)
                 if not scan:
                     found = 1
                     break
             else:
-                # Tuner is in use, flag as external if not expected to be (in use)
+                # Tuner is "in use" (or at least, not "not in use"), handle appropiately
                 if self.tunerstatus[str(instance)]['status'] != "Active":
-                    self.tunerstatus[str(instance)]['status'] = "External"
-
+                    # Check to see if stopping, may take some time to get to the state fully
+                    if status == 'StopPending':
+                        if (transport == "STOPPED") and (not hwinuse):
+                            # OK, fully stopped now, set accordingly
+                            self.plugin_utils.logger.noob(
+                                'Ceton tuner %s, StopPending "cleared", set status to Inactive' % str(instance))
+                            self.tunerstatus[str(instance)]['status'] = "Inactive"
+                            self.tunerstatus[str(instance)]['stream_args'] = {}
+                    else:
+                        # To get here, status is External - but check for stop => and update
+                        if (transport == "STOPPED") and (not hwinuse):
+                            # No longer in use, set accordingly
+                            self.plugin_utils.logger.noob('Ceton tuner %s, External state "cleared", now Inactive' %
+                                                          str(instance))
+                            self.tunerstatus[str(instance)]['status'] = "Inactive"
+                            self.tunerstatus[str(instance)]['stream_args'] = {}
+                        else:
+                            # External, and still in use
+                            if self.tunerstatus[str(instance)]['status'] != "External":
+                                self.plugin_utils.logger.noob('Ceton tuner %s, setting status to External' %
+                                                              str(instance))
+                            self.tunerstatus[str(instance)]['status'] = "External"
+            self.plugin_utils.logger.debug('Ceton tuner %s: status = %s' %
+                                           (str(instance), self.tunerstatus[str(instance)]['status']))
         return found, instance
 
     def startstop_ceton_tuner(self, instance, startstop):
         if not startstop:
             port = 0
             self.plugin_utils.logger.info('Ceton tuner %s to be stopped' % str(instance))
-            self.tunerstatus[str(instance)] ["status"]= "Inactive" 
+            self.tunerstatus[str(instance)]["status"] = "StopPending"
         else:
             self.plugin_utils.logger.info('Ceton tuner %s to be started' % str(instance))
             self.tunerstatus[str(instance)]["status"] = "Active"
@@ -273,6 +298,8 @@ class Plugin_OBJ():
         return cleaned_channels
 
     def get_channel_stream(self, chandict, stream_args):
+        # Lock (immediately!) ... so "simultaneous" requests don't try to use the same tuner. Process, then release.
+        self.lock.acquire()
         found, instance = self.get_ceton_tuner_status(chandict)
         self.tunerstatus[str(instance)]["stream_args"] = stream_args
 
@@ -306,6 +333,8 @@ class Plugin_OBJ():
 
         stream_info = {"url": streamurl, "tuner": instance}
 
+        # And, as noted above - release the lock now. Let other requests come in, as this tuner assignment is complete.
+        self.lock.release()
         return stream_info
 
     def close_stream(self, instance, stream_args):
