@@ -26,11 +26,15 @@ Join us in `#fHDHR <irc://irc.freenode.net/#fHDHR>`_ on Freenode.
 ````
 [ceton]
 # ceton_ip = 
+# device_tuners
 # tuners =
 # streaming_method =
 ````
 =======
 Support for the stand-alone eth4 and eth6 versions of Ceton devices is confirmed.
-The PCI devices might work, but due to a lack of hardware, have not been tested.
+The PCI devices work, but only on platforms that have drivers for the hardware, which appears to be Linux only at this time.
+
+This release supports multiple Ceton devices.  To make use of multiple Ceton devices the configutation options ceton_ip and device_tuners can accept a comma seperated list of values.
+
 
 Unlike the other origin plugins, this one requires the fHDHR_plugin_stream_ffmpeg.
