@@ -7,12 +7,19 @@
                     "valid_options": "list",
                     "description": "A Comma Seperated list of Ceton device IP addresses"
                 },
-          "tuners":{
+	  "device_tuners":{
                     "value": "4",
                     "config_file": true,
                     "config_web": true,
                     "valid_options": "list",
                     "description": "A Comma Seperated list of tuners for each Ceton device"
+                },
+          "tuners":{
+                    "value": "4",
+                    "config_file": true,
+                    "config_web": true,
+                    "valid_options": "list",
+                    "description": "The total number of tuners for all Ceton devices"
                 },
           "stream_method":{
                     "value": "ffmpeg",
