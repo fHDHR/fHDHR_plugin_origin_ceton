@@ -1,4 +1,12 @@
-__version__ = '1.0.0'
+"""
+Client utility, to test out fHDHR (and Ceton, with the 'default' configuration as captured below.
+
+Run parameters as captured below => when started, randomly delays and starts client runners (ffmpeg), that
+access / use tuners, based on the default command (also below). By editing the command, HW encoding can be used (or
+not), and the output can be redirected to a file if desired (for checking - the default is output to /dev/null).
+"""
+
+__version__ = '1.1.0'
 
 from collections import namedtuple
 import random
@@ -18,16 +26,19 @@ outlist = ['-f null /dev/null',                 # List, of output destination (n
            '-f null /dev/null',
            '-f null /dev/null',
            '-f mpegts /dev/null']
-currchnl = 0                                    # Current channel to be used (index to chanlist)
 totalrun = 1200                                 # Total run time, seconds. Will stop at this point.
 timedly = timedefn(5, 15)                       # Time delay before start job, range in seconds
 timerun = timedefn(10, 30)                      # Time to run a (ffmpeg) job, range in seconds
-startzero = True                                # Start all jobs at zero time (vs. timegap, random value)
-# ffmpeg command
+startzero = True                                # Start all jobs at zero time (vs. timedly, random value)
+
+# ffmpeg command - default. DUR is replaced by run duration, CHNL by the targeted channel
 ffmpegcli = 'ffmpeg -y -loglevel error -hwaccel cuda -hwaccel_output_format cuda ' \
             '-i http://192.168.2.64:5006/api/tuners?method=stream&channel=CHNL&origin=ceton -t DUR ' \
             '-vf scale_cuda=1920:1080 -c:v hevc_nvenc -preset p6 -tune hq -b:v 3M -c:a ac3 -b:a 196k'
 
+# And, some counters / tracking variables
+currchnl = 0                                    # Current channel to be used (index to chanlist)
+exitcode = 0                                    # Exit Code, start assuming all is good
 
 # Routine to provide random delay and run time - based on desired ranges for each
 def timing(immediate):
@@ -58,6 +69,7 @@ def runner(job):
     would give to subprocess.Popen.
     """
     def run_in_thread(on_exit, popen_args, threadjob):
+        global exitcode
         # Non-blocking process run (Popen)!
         # Shell not requird for POSIX, but then have to split string to array (not if Shell=True!)
         # Store process information, so can terminate() at the exit (cleanly!) of this program overall
@@ -68,14 +80,17 @@ def runner(job):
         # just watch the console output if desired => otherwise, just use as a test tool.
         proc = subprocess.Popen(popen_args)
         threadjob['proc'] = proc
+        print("[%s] Starting Job: %d (Duration = %d secs), PID = %s" %
+              (time.asctime(time.localtime(time.time())), threadjob['job'], threadjob['timing'].runtime, str(proc.pid)))
         proc.wait()
-        print("[%s] Ending Job: %d" % (time.asctime(time.localtime(time.time())), threadjob['job']))
+        print("[%s] Ending Job: %d, PID = %s" %
+              (time.asctime(time.localtime(time.time())), threadjob['job'], str(proc.pid)))
+        if proc.returncode:
+            exitcode = exitcode + 1
         if threadjob['restart']:
             on_exit(threadjob, False)
         return
     thread = threading.Thread(target=run_in_thread, args=(newrunner, ffmpegcmd.split(), job))
-    print("[%s] Starting Job: %d (Duration = %d secs)" % (time.asctime(time.localtime(time.time())),
-                                                          job['job'], job['timing'].runtime))
     thread.start()
     return thread
 
@@ -133,5 +148,8 @@ if __name__ == '__main__':
     fullsched.enter(totalrun, -1, endrunners, argument=(runners,))
     fullsched.run(blocking=True)
 
-    print('Exiting Cleanly!')
-    exit(0)
+    if exitcode:
+        print('Exiting, with Errors.')
+    else:
+        print('Exiting Cleanly!')
+    exit(exitcode)
