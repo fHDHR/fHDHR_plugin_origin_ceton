@@ -180,6 +180,7 @@ class Plugin_OBJ():
                             self.tunerstatus[str(instance)]['stream_args'] = {}
                         else:
                             # External, and still in use
+                            # NOTE: May show as this state while stopping - due to "slow" tuner response / shutdown
                             if self.tunerstatus[str(instance)]['status'] != "External":
                                 self.plugin_utils.logger.noob('Ceton tuner %s, setting status to External' %
                                                               str(instance))
