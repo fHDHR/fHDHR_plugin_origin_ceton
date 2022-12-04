@@ -150,40 +150,33 @@ class Plugin_OBJ():
                 hwinuse = self.devinuse(instance)
             # Check to see if transport on (rtp/udp streaming), or direct HW device access (pcie)
             # This also handles the case of another client accessing the tuner!
-            if (status == 'Inactive') and (transport == "STOPPED") and (not hwinuse):
-                if not scan:
-                    self.plugin_utils.logger.info('Selected Ceton tuner#: %s' % str(instance))
-                else:
-                    self.plugin_utils.logger.debug('Scanning Ceton tuner#: %s' % str(instance))
-                # Return needed info now (if not in scan mode)
-                if not scan:
-                    found = 1
-                    break
-            else:
-                # Tuner is "in use" (or at least, not "not in use"), handle appropiately
-                if self.tunerstatus[str(instance)]['status'] != "Active":
-                    # Check to see if stopping, may take some time to get to the state fully
-                    if status == 'StopPending':
-                        if (transport == "STOPPED") and (not hwinuse):
-                            # OK, fully stopped now, set accordingly
-                            self.plugin_utils.logger.noob(
-                                'Ceton tuner %s, StopPending "cleared", set status to Inactive' % str(instance))
-                            self.tunerstatus[str(instance)]['status'] = "Inactive"
-                            self.tunerstatus[str(instance)]['stream_args'] = {}
+
+            # Tuner is "in use" (or at least, not "not in use"), handle appropiately
+            if self.tunerstatus[str(instance)]['status'] != "Active":
+                if (transport == "STOPPED") and (not hwinuse):
+                    # OK, fully stopped now, set accordingly
+                    if self.tunerstatus[str(instance)]['status'] != "Inactive":
+                        self.plugin_utils.logger.noob(
+                            'Ceton tuner %s, %s "cleared", set status to Inactive' % (str(instance), self.tunerstatus[str(instance)]['status']))
+                    self.tunerstatus[str(instance)]['status'] = "Inactive"
+                    self.tunerstatus[str(instance)]['stream_args'] = {}
+ 
+                    if not scan:
+                        self.plugin_utils.logger.info('Selected Ceton tuner#: %s' % str(instance))
+                        # Return needed info now (if not in scan mode)
+                        found = 1
+                        break
                     else:
-                        # To get here, status is External - but check for stop => and update
-                        if (transport == "STOPPED") and (not hwinuse):
-                            # No longer in use, set accordingly
-                            self.plugin_utils.logger.noob('Ceton tuner %s, External state "cleared", now Inactive' %
+                        self.plugin_utils.logger.debug('Scanning Ceton tuner#: %s' % str(instance))
+
+                # Check to see if stopping, may take some time to get to the state fully
+                elif self.tunerstatus[str(instance)]['status'] != 'StopPending':
+                    # External, and still in use
+                    if self.tunerstatus[str(instance)]['status'] != "External":
+                        self.plugin_utils.logger.noob('Ceton tuner %s, setting status to External' %
                                                           str(instance))
-                            self.tunerstatus[str(instance)]['status'] = "Inactive"
-                            self.tunerstatus[str(instance)]['stream_args'] = {}
-                        else:
-                            # External, and still in use
-                            if self.tunerstatus[str(instance)]['status'] != "External":
-                                self.plugin_utils.logger.noob('Ceton tuner %s, setting status to External' %
-                                                              str(instance))
-                            self.tunerstatus[str(instance)]['status'] = "External"
+                    self.tunerstatus[str(instance)]['status'] = "External"
+
             self.plugin_utils.logger.debug('Ceton tuner %s: status = %s' %
                                            (str(instance), self.tunerstatus[str(instance)]['status']))
         return found, instance
